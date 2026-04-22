@@ -43,3 +43,6 @@ class Score:
             self.autoUpgradeCost = int(self.autoUpgradeCost * 1.5)
             return True
         return False
+
+    def addBonus(self, bonus):
+        self.score += bonus

@@ -39,6 +39,22 @@ def buyAutoUpgrade():
     else:
         messagebox.showerror("Błąd", "Nie masz punktów!")
 
+def saveGame():
+    score.saveGame()
+    messagebox.showinfo("Zapis", "Gra została zapisana.")
+
+def startGame():
+    if score.saveExists():
+        answer = messagebox.askyesno("Zapis gry", "Znaleziono zapis gry.\nCzy chcesz wczytać grę?")
+        if answer:
+            score.loadGame()
+
+def onClosing():
+    score.saveGame()
+    answer = messagebox.askyesno("Wyjście", "Gra została zapisana.\nCzy chcesz wyjść z gry?")
+    if answer:
+        root.destroy()
+
 def getRandomBonusValue():
     return random.choices([20, 50, 100, 200, 500], weights=[50, 25, 15, 8, 2])[0]
 
@@ -55,21 +71,26 @@ def bonusClick():
     global currentBonusValue
     global bonusVisible
     global bonusHideAfterId
+
     score.addBonus(currentBonusValue)
     updateLabels()
     bonusButton.place_forget()
     bonusVisible = False
+
     if bonusHideAfterId is not None:
         root.after_cancel(str(bonusHideAfterId))
         bonusHideAfterId = None
+
     scheduleNextBonus()
 
 def hideBonus():
     global bonusVisible
     global bonusHideAfterId
+
     if bonusVisible:
         bonusButton.place_forget()
         bonusVisible = False
+
     bonusHideAfterId = None
     scheduleNextBonus()
 
@@ -94,8 +115,10 @@ root.title("pyClicker")
 root.iconbitmap("icon.ico")
 root.configure(bg=backgroundColor)
 root.geometry("600x700")
+root.protocol("WM_DELETE_WINDOW", onClosing)
 
 score = Score.Score()
+startGame()
 
 frame = Frame(root, bg=backgroundColor)
 frame.place(relx=0.5, rely=0.5, anchor="center")
@@ -125,8 +148,12 @@ autoUpgradeButton.grid(row=5, column=0, padx=10, pady=8)
 autoUpgradeLabel = Label(frame, text="100 Pkt", bg=backgroundColor, font=("Arial", 12), fg="white")
 autoUpgradeLabel.grid(row=5, column=1, padx=10, pady=8)
 
+saveButton = Button(frame, text="Zapisz grę", command=saveGame, width=20, font=("Arial", 12))
+saveButton.grid(row=6, column=0, columnspan=2, pady=12)
+
 bonusButton = Button(root, text="+20", command=bonusClick, bg="gold", fg="black", font=("Arial", 12, "bold"))
 
+updateLabels()
 autoPoints()
 scheduleNextBonus()
 

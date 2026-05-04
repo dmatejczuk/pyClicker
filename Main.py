@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import messagebox
+from tkinter import ttk
 import random
 import Score
 
@@ -13,16 +14,22 @@ def updateLabels():
     label.config(text="Punkty: " + str(score.getScore()))
     pointLabel.config(text="Klik: +" + str(score.getPoint()))
     autoLabel.config(text="Auto: +" + str(score.getAutoPoint()))
+    levelLabel.config(text="Poziom: " + str(score.getLevel()))
+    nextLevelLabel.config(text="Następny poziom: " + str(score.getNextLevelScore()) + " pkt")
     upgradeLabel.config(text=str(score.getUpgradeCost()) + " Pkt")
     autoUpgradeLabel.config(text=str(score.getAutoUpgradeCost()) + " Pkt")
+    progressBar["maximum"] = max(1, score.getProgressMax())
+    progressBar["value"] = min(score.getProgress(), score.getProgressMax())
 
 def click():
     score.addClick()
+    checkLevelUp()
     updateLabels()
 
 def autoPoints():
     if score.getAutoPoint() > 0:
         score.addAuto()
+        checkLevelUp()
         updateLabels()
 
     root.after(1000, autoPoints)
@@ -50,10 +57,21 @@ def startGame():
             score.loadGame()
 
 def onClosing():
-    score.saveGame()
-    answer = messagebox.askyesno("Wyjście", "Gra została zapisana.\nCzy chcesz wyjść z gry?")
-    if answer:
-        root.destroy()
+    saveAnswer = messagebox.askyesno("Zapis", "Czy chcesz zapisać grę?")
+    if saveAnswer:
+        score.saveGame()
+        exitAnswer = messagebox.askyesno("Wyjście", "Gra została zapisana.\nCzy chcesz wyjść z gry?")
+        if exitAnswer:
+            root.destroy()
+    else:
+        exitAnswer = messagebox.askyesno("Wyjście", "Czy chcesz wyjść z gry?")
+        if exitAnswer:
+            root.destroy()
+
+def checkLevelUp():
+    level, bonus = score.checkLevelUp()
+    if level is not None:
+        messagebox.showinfo("Awans!", "Awansowałeś na poziom " + str(level) + "!\nBonus: +" + str(bonus) + " pkt")
 
 def getRandomBonusValue():
     return random.choices([20, 50, 100, 200, 500], weights=[50, 25, 15, 8, 2])[0]
@@ -73,6 +91,7 @@ def bonusClick():
     global bonusHideAfterId
 
     score.addBonus(currentBonusValue)
+    checkLevelUp()
     updateLabels()
     bonusButton.place_forget()
     bonusVisible = False
@@ -114,7 +133,7 @@ root = Tk()
 root.title("pyClicker")
 root.iconbitmap("icon.ico")
 root.configure(bg=backgroundColor)
-root.geometry("600x700")
+root.geometry("600x760")
 root.protocol("WM_DELETE_WINDOW", onClosing)
 
 score = Score.Score()
@@ -132,24 +151,33 @@ pointLabel.grid(row=1, column=0, columnspan=2, pady=3)
 autoLabel = Label(frame, text="Auto: +0", font=("Arial", 14), bg=backgroundColor, fg="white")
 autoLabel.grid(row=2, column=0, columnspan=2, pady=3)
 
+levelLabel = Label(frame, text="Poziom: 1", font=("Arial", 14), bg=backgroundColor, fg="white")
+levelLabel.grid(row=3, column=0, columnspan=2, pady=3)
+
+nextLevelLabel = Label(frame, text="Następny poziom: 1000 pkt", font=("Arial", 12), bg=backgroundColor, fg="white")
+nextLevelLabel.grid(row=4, column=0, columnspan=2, pady=3)
+
+progressBar = ttk.Progressbar(frame, length=300)
+progressBar.grid(row=5, column=0, columnspan=2, pady=10)
+
 mainButtonImage = PhotoImage(file="mainButton.png")
 button = Button(frame, image=mainButtonImage, command=click, borderwidth=0, highlightthickness=0, bg=backgroundColor, activebackground=backgroundColor)
-button.grid(row=3, column=0, columnspan=2, pady=20)
+button.grid(row=6, column=0, columnspan=2, pady=20)
 
 upgradeButton = Button(frame, text="Ulepsz klik", command=buyUpgrade, width=20, font=("Arial", 12))
-upgradeButton.grid(row=4, column=0, padx=10, pady=8)
+upgradeButton.grid(row=7, column=0, padx=10, pady=8)
 
 upgradeLabel = Label(frame, text="50 Pkt", bg=backgroundColor, font=("Arial", 12), fg="white")
-upgradeLabel.grid(row=4, column=1, padx=10, pady=8)
+upgradeLabel.grid(row=7, column=1, padx=10, pady=8)
 
 autoUpgradeButton = Button(frame, text="Ulepsz auto", command=buyAutoUpgrade, width=20, font=("Arial", 12))
-autoUpgradeButton.grid(row=5, column=0, padx=10, pady=8)
+autoUpgradeButton.grid(row=8, column=0, padx=10, pady=8)
 
 autoUpgradeLabel = Label(frame, text="100 Pkt", bg=backgroundColor, font=("Arial", 12), fg="white")
-autoUpgradeLabel.grid(row=5, column=1, padx=10, pady=8)
+autoUpgradeLabel.grid(row=8, column=1, padx=10, pady=8)
 
 saveButton = Button(frame, text="Zapisz grę", command=saveGame, width=20, font=("Arial", 12))
-saveButton.grid(row=6, column=0, columnspan=2, pady=12)
+saveButton.grid(row=9, column=0, columnspan=2, pady=12)
 
 bonusButton = Button(root, text="+20", command=bonusClick, bg="gold", fg="black", font=("Arial", 12, "bold"))
 

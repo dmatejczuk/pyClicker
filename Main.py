@@ -5,6 +5,7 @@ import random
 import Score
 
 backgroundColor = "#3D82ED"
+panelColor = "#19376D"
 currentBonusValue = 20
 bonusVisible = False
 bonusShowAfterId = None
@@ -12,14 +13,25 @@ bonusHideAfterId = None
 
 def updateLabels():
     label.config(text="Punkty: " + str(score.getScore()))
-    pointLabel.config(text="Klik: +" + str(score.getPoint()))
-    autoLabel.config(text="Auto: +" + str(score.getAutoPoint()))
+    pointLabel.config(text="Umiejętności: +" + str(score.getPoint()))
+    autoLabel.config(text="Inwestycje: +" + str(score.getAutoPoint()) + "/s")
     levelLabel.config(text="Poziom: " + str(score.getLevel()))
     nextLevelLabel.config(text="Następny poziom: " + str(score.getNextLevelScore()) + " pkt")
-    upgradeLabel.config(text=str(score.getUpgradeCost()) + " Pkt")
-    autoUpgradeLabel.config(text=str(score.getAutoUpgradeCost()) + " Pkt")
+    skillButton.config(text="Rozwijaj umiejętności\nKoszt: " + str(score.getUpgradeCost()) + " Pkt")
     progressBar["maximum"] = max(1, score.getProgressMax())
     progressBar["value"] = min(score.getProgress(), score.getProgressMax())
+    updateInvestmentLabels()
+
+def updateInvestmentLabels():
+    for i in range(len(investmentLabels)):
+        investment = score.getInvestments()[i]
+        cost = score.getInvestmentCost(i)
+        if score.isInvestmentUnlocked(i):
+            investmentLabels[i].config(text=investment["name"] + "\nCena: " + str(cost) + " pkt | +" + str(investment["income"]) + "/s | x" + str(investment["count"]))
+            investmentButtons[i].config(state=NORMAL)
+        else:
+            investmentLabels[i].config(text=investment["name"] + "\nOd poziomu " + str(investment["unlockLevel"]))
+            investmentButtons[i].config(state=DISABLED)
 
 def click():
     score.addClick()
@@ -40,11 +52,14 @@ def buyUpgrade():
     else:
         messagebox.showerror("Błąd", "Nie masz punktów!")
 
-def buyAutoUpgrade():
-    if score.buyAutoUpgrade():
+def buyInvestment(index):
+    result = score.buyInvestment(index)
+    if result == "bought":
         updateLabels()
+    elif result == "locked":
+        messagebox.showerror("Błąd", "Ta inwestycja nie jest jeszcze odblokowana!")
     else:
-        messagebox.showerror("Błąd", "Nie masz punktów!")
+        messagebox.showerror("Błąd", "Nie masz wystarczająco punktów!")
 
 def saveGame():
     score.saveGame()
@@ -58,6 +73,7 @@ def startGame():
 
 def onClosing():
     saveAnswer = messagebox.askyesno("Zapis", "Czy chcesz zapisać grę?")
+
     if saveAnswer:
         score.saveGame()
         exitAnswer = messagebox.askyesno("Wyjście", "Gra została zapisana.\nCzy chcesz wyjść z gry?")
@@ -121,8 +137,8 @@ def showBonus():
     if bonusVisible:
         return
     currentBonusValue = getRandomBonusValue()
-    x = random.randint(20, 420)
-    y = random.randint(20, 500)
+    x = random.randint(20, 1020)
+    y = random.randint(20, 620)
     bonusButton.config(text="+" + str(currentBonusValue))
     bonusButton.place(x=x, y=y)
     bonusVisible = True
@@ -133,51 +149,65 @@ root = Tk()
 root.title("pyClicker")
 root.iconbitmap("icon.ico")
 root.configure(bg=backgroundColor)
-root.geometry("600x760")
+root.geometry("1120x700")
 root.protocol("WM_DELETE_WINDOW", onClosing)
+root.resizable(False, False)
 
 score = Score.Score()
 startGame()
 
-frame = Frame(root, bg=backgroundColor)
-frame.place(relx=0.5, rely=0.5, anchor="center")
+mainFrame = Frame(root, bg=backgroundColor)
+mainFrame.place(relx=0.5, rely=0.5, anchor="center")
 
-label = Label(frame, text="Punkty: 0", font=("Arial", 20, "bold"), bg=backgroundColor, fg="white")
+leftFrame = Frame(mainFrame, bg=backgroundColor)
+leftFrame.grid(row=0, column=0, padx=30, pady=20)
+
+rightFrame = Frame(mainFrame, bg=panelColor, padx=18, pady=18)
+rightFrame.grid(row=0, column=1, padx=30, pady=20)
+
+label = Label(leftFrame, text="Punkty: 0", font=("Arial", 28, "bold"), bg=backgroundColor, fg="white")
 label.grid(row=0, column=0, columnspan=2, pady=(10, 10))
 
-pointLabel = Label(frame, text="Klik: +1", font=("Arial", 14), bg=backgroundColor, fg="white")
+pointLabel = Label(leftFrame, text="Umiejętności: +1", font=("Arial", 14), bg=backgroundColor, fg="white")
 pointLabel.grid(row=1, column=0, columnspan=2, pady=3)
 
-autoLabel = Label(frame, text="Auto: +0", font=("Arial", 14), bg=backgroundColor, fg="white")
+autoLabel = Label(leftFrame, text="Inwestycje: +0/s", font=("Arial", 14), bg=backgroundColor, fg="white")
 autoLabel.grid(row=2, column=0, columnspan=2, pady=3)
 
-levelLabel = Label(frame, text="Poziom: 1", font=("Arial", 14), bg=backgroundColor, fg="white")
+levelLabel = Label(leftFrame, text="Poziom: 1", font=("Arial", 14), bg=backgroundColor, fg="white")
 levelLabel.grid(row=3, column=0, columnspan=2, pady=3)
 
-nextLevelLabel = Label(frame, text="Następny poziom: 1000 pkt", font=("Arial", 12), bg=backgroundColor, fg="white")
+nextLevelLabel = Label(leftFrame, text="Następny poziom: 1000 pkt", font=("Arial", 12), bg=backgroundColor, fg="white")
 nextLevelLabel.grid(row=4, column=0, columnspan=2, pady=3)
 
-progressBar = ttk.Progressbar(frame, length=300)
+progressBar = ttk.Progressbar(leftFrame, length=300)
 progressBar.grid(row=5, column=0, columnspan=2, pady=10)
 
 mainButtonImage = PhotoImage(file="mainButton.png")
-button = Button(frame, image=mainButtonImage, command=click, borderwidth=0, highlightthickness=0, bg=backgroundColor, activebackground=backgroundColor)
+button = Button(leftFrame, image=mainButtonImage, command=click, borderwidth=0, highlightthickness=0, bg=backgroundColor, activebackground=backgroundColor)
 button.grid(row=6, column=0, columnspan=2, pady=20)
 
-upgradeButton = Button(frame, text="Ulepsz klik", command=buyUpgrade, width=20, font=("Arial", 12))
-upgradeButton.grid(row=7, column=0, padx=10, pady=8)
+shopTitle = Label(rightFrame, text="ROZWÓJ", font=("Arial", 20, "bold"), bg=panelColor, fg="white")
+shopTitle.grid(row=0, column=0, columnspan=2, pady=(0, 15))
 
-upgradeLabel = Label(frame, text="50 Pkt", bg=backgroundColor, font=("Arial", 12), fg="white")
-upgradeLabel.grid(row=7, column=1, padx=10, pady=8)
+skillButton = Button(rightFrame, text="Rozwijaj umiejętności\nKoszt: 50 pkt", command=buyUpgrade, width=28, height=2, font=("Arial", 11, "bold"))
+skillButton.grid(row=1, column=0, columnspan=2, padx=6, pady=(0, 18))
 
-autoUpgradeButton = Button(frame, text="Ulepsz auto", command=buyAutoUpgrade, width=20, font=("Arial", 12))
-autoUpgradeButton.grid(row=8, column=0, padx=10, pady=8)
+investmentTitle = Label(rightFrame, text="INWESTYCJE", font=("Arial", 16, "bold"), bg=panelColor, fg="white")
+investmentTitle.grid(row=2, column=0, columnspan=2, pady=(0, 10))
 
-autoUpgradeLabel = Label(frame, text="100 Pkt", bg=backgroundColor, font=("Arial", 12), fg="white")
-autoUpgradeLabel.grid(row=8, column=1, padx=10, pady=8)
+investmentButtons = []
+investmentLabels = []
 
-saveButton = Button(frame, text="Zapisz grę", command=saveGame, width=20, font=("Arial", 12))
-saveButton.grid(row=9, column=0, columnspan=2, pady=12)
+for i in range(len(score.getInvestments())):
+    investmentButton = Button(rightFrame, text="Kup", command=lambda i=i: buyInvestment(i), width=8, font=("Arial", 10))
+    investmentButton.grid(row=3 + i, column=0, padx=6, pady=8)
+
+    investmentLabel = Label(rightFrame, text="", bg=panelColor, fg="white", font=("Arial", 10), justify="left", width=42, anchor="w")
+    investmentLabel.grid(row=3 + i, column=1, padx=6, pady=8)
+
+    investmentButtons.append(investmentButton)
+    investmentLabels.append(investmentLabel)
 
 bonusButton = Button(root, text="+20", command=bonusClick, bg="gold", fg="black", font=("Arial", 12, "bold"))
 
@@ -185,5 +215,4 @@ updateLabels()
 autoPoints()
 scheduleNextBonus()
 
-root.resizable(False, False)
 root.mainloop()

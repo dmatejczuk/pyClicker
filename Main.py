@@ -4,9 +4,9 @@ from tkinter import ttk
 import random
 import Score
 
-backgroundColor = "#3D82ED"
-panelColor = "#19376D"
-textColor = "white"
+backgroundColor = "#EDEDED"
+panelColor = "#BDBDBD"
+textColor = "black"
 fontSize = 14
 themes = {
     "Blue": ("#3D82ED", "#19376D"),
@@ -19,6 +19,8 @@ bonusVisible = False
 bonusShowAfterId = None
 bonusHideAfterId = None
 settingsWindow = None
+screenWidth = 1120
+screenHeight = 700
 worldDecorations = []
 
 def money(value):
@@ -102,7 +104,10 @@ def openSettingsWindow():
 
     def onSettingsClose():
         global settingsWindow
-        settingsWindow.destroy()
+
+        if settingsWindow is not None:
+            settingsWindow.destroy()
+
         settingsWindow = None
 
     settingsWindow.protocol("WM_DELETE_WINDOW", onSettingsClose)
@@ -182,17 +187,20 @@ def updateInvestmentLabels():
 
 def click():
     score.addClick()
+    updateLabels()
     checkLevelUp()
     updateLabels()
 
 def specialClick():
     score.addSpecialClick()
+    updateLabels()
     checkLevelUp()
     updateLabels()
 
 def autoPoints():
     if score.getAutoPoint() > 0:
         score.addAuto()
+        updateLabels()
         checkLevelUp()
         updateLabels()
 
@@ -251,7 +259,27 @@ def onClosing():
 def checkLevelUp():
     level, bonus = score.checkLevelUp()
     if level is not None:
-        messagebox.showinfo("Awans!", "Awansowałeś na poziom " + str(level) + "!\nBonus: +" + money(bonus))
+        levelWindow = Toplevel(root)
+        levelWindow.title("Awans!")
+        levelWindow.iconbitmap("icon.ico")
+        levelWindow.geometry("280x310")
+        levelWindow.resizable(False, False)
+        levelWindow.configure(bg=backgroundColor)
+
+        levelWindow.transient(root)
+        levelWindow.grab_set()
+        levelWindow.focus_force()
+
+        medalCanvas = Canvas(levelWindow, width=180, height=180, bg=backgroundColor, highlightthickness=0)
+        medalCanvas.pack(pady=(15, 5))
+
+        medalCanvas.create_image(90, 90, image=medalImage)
+        medalCanvas.create_text(90, 90, text=str(level), font=("Arial", 24, "bold"), fill="white")
+
+        infoLabel = Label(levelWindow, text="Gratulacje!\nOsiągnięto poziom " + str(level) + "\nBonus: +" + money(bonus), font=("Arial", 12, "bold"), bg=backgroundColor, fg=textColor, justify="center")
+        infoLabel.pack(pady=8)
+
+        Button(levelWindow, text="Zamknij", command=levelWindow.destroy, width=12).pack(pady=(0, 12))
 
 def getRandomBonusValue():
     return random.choices([20, 50, 100, 200, 500], weights=[50, 25, 15, 8, 2])[0]
@@ -271,6 +299,7 @@ def bonusClick():
     global bonusHideAfterId
 
     score.addBonus(currentBonusValue)
+    updateLabels()
     checkLevelUp()
     updateLabels()
     bonusButton.place_forget()
@@ -310,15 +339,13 @@ def showBonus():
     bonusHideAfterId = root.after(3000, hideBonus)
 
 def createWorldDecoration(investmentName):
-    if investmentName == "Fundusz inwestycyjny":
-        image = stockImage
-    elif investmentName == "Firma":
+    if investmentName == "Firma":
         image = companyImage
     elif investmentName == "Korporacja":
         image = corporationImage
     else:
-        image = stockImage
-    screenWidth = 1120
+        return
+
     bottomY = 30
     spacing = 90
     startX = 30
@@ -339,7 +366,7 @@ root = Tk()
 root.title("pyClicker")
 root.iconbitmap("icon.ico")
 root.configure(bg=backgroundColor)
-root.geometry("1120x700")
+root.geometry(f"{screenWidth}x{screenHeight}")
 root.protocol("WM_DELETE_WINDOW", onClosing)
 root.resizable(False, False)
 
@@ -403,14 +430,14 @@ investmentLabels = []
 cartImage = PhotoImage(file="./cart.png")
 cartImage = cartImage.subsample(4, 4)
 
-stockImage = PhotoImage(file="./stock.png")
-stockImage = stockImage.subsample(5, 5)
-
 companyImage = PhotoImage(file="./company.png")
 companyImage = companyImage.subsample(5, 5)
 
 corporationImage = PhotoImage(file="./corporation.png")
 corporationImage = corporationImage.subsample(5, 5)
+
+medalImage = PhotoImage(file="./medal.png")
+medalImage = medalImage.subsample(3, 3)
 
 for i in range(len(score.getInvestments())):
     investmentButton = Button(rightFrame, image=cartImage, command=lambda i=i: buyInvestment(i), bd=0, relief="flat", highlightthickness=0, bg=panelColor, activebackground=panelColor, width=cartImage.width(), height=cartImage.height())

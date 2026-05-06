@@ -17,7 +17,7 @@ class Score:
             {"name": "Firma", "baseCost": 6000, "income": 60, "count": 0, "unlockLevel": 4},
             {"name": "Korporacja", "baseCost": 12000, "income": 120, "count": 0, "unlockLevel": 8}
         ]
-        self.themeName = "Niebieski"
+        self.themeName = "White"
         self.fontSize = 14
 
     def getScore(self):
@@ -177,7 +177,7 @@ class Score:
         self.specialClickLevel = data.get("specialClickLevel", 1)
         self.specialClickCost = data.get("specialClickCost", 20000)
         self.investments = data["investments"]
-        self.themeName = data.get("themeName", "Niebieski")
+        self.themeName = data.get("themeName", "White")
         self.fontSize = data.get("fontSize", 14)
 
     def saveExists(self):

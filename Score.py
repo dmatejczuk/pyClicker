@@ -49,7 +49,7 @@ class Score:
 
     def getInvestmentCost(self, index):
         investment = self.investments[index]
-        return int(investment["baseCost"] * (1.7 ** investment["count"]))
+        return int(investment["baseCost"] * (1.25 ** investment["count"]))
 
     def isInvestmentUnlocked(self, index):
         return self.level >= self.investments[index]["unlockLevel"]

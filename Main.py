@@ -19,6 +19,7 @@ bonusVisible = False
 bonusShowAfterId = None
 bonusHideAfterId = None
 settingsWindow = None
+worldDecorations = []
 
 def money(value):
     return str(int(value)) + " $"
@@ -40,6 +41,7 @@ def changeTheme(choice):
     mainFrame.configure(bg=backgroundColor)
     leftFrame.configure(bg=backgroundColor)
     rightFrame.configure(bg=panelColor)
+    worldCanvas.configure(bg=backgroundColor)
     button.configure(bg=backgroundColor, activebackground=backgroundColor)
     bonusButton.configure(bg=backgroundColor, activebackground=backgroundColor)
 
@@ -96,7 +98,6 @@ def openSettingsWindow():
     fontFrame.pack()
 
     Button(fontFrame, text="A+", command=increaseFont, width=8).grid(row=0, column=0, padx=4)
-
     Button(fontFrame, text="A-", command=decreaseFont, width=8).grid(row=0, column=1, padx=4)
 
     def onSettingsClose():
@@ -216,6 +217,9 @@ def buyInvestment(index):
     result = score.buyInvestment(index)
     if result == "bought":
         updateLabels()
+        investmentName = score.getInvestments()[index]["name"]
+        if investmentName == "Firma" or investmentName == "Korporacja":
+            createWorldDecoration(investmentName)
     elif result == "locked":
         messagebox.showerror("Błąd", "Ta inwestycja nie jest jeszcze odblokowana!")
     else:
@@ -299,11 +303,37 @@ def showBonus():
     currentBonusValue = getRandomBonusValue()
     x = random.randint(20, 1020)
     y = random.randint(20, 620)
-    bonusButton.config(text="+" + money(currentBonusValue))
+    bonusButton.config(text=money(currentBonusValue))
     bonusButton.place(x=x, y=y)
     bonusVisible = True
     bonusShowAfterId = None
     bonusHideAfterId = root.after(3000, hideBonus)
+
+def createWorldDecoration(investmentName):
+    if investmentName == "Fundusz inwestycyjny":
+        image = stockImage
+    elif investmentName == "Firma":
+        image = companyImage
+    elif investmentName == "Korporacja":
+        image = corporationImage
+    else:
+        image = stockImage
+    screenWidth = 1120
+    bottomY = 30
+    spacing = 90
+    startX = 30
+    x = startX + (len(worldDecorations) * spacing)
+    if x > screenWidth - 120:
+        x = random.randint(30, screenWidth - 120)
+    decoration = worldCanvas.create_image(x, bottomY, image=image, anchor="nw")
+    worldDecorations.append(decoration)
+
+def loadWorldDecorations():
+    investments = score.getInvestments()
+    for investment in investments:
+        if investment["name"] == "Firma" or investment["name"] == "Korporacja":
+            for i in range(investment["count"]):
+                createWorldDecoration(investment["name"])
 
 root = Tk()
 root.title("pyClicker")
@@ -315,6 +345,9 @@ root.resizable(False, False)
 
 score = Score.Score()
 startGame()
+
+worldCanvas = Canvas(root, width=1120, height=120, bg=backgroundColor, bd=0, highlightthickness=0)
+worldCanvas.place(x=0, y=580)
 
 mainFrame = Frame(root, bg=backgroundColor)
 mainFrame.place(relx=0.5, rely=0.5, anchor="center")
@@ -370,6 +403,15 @@ investmentLabels = []
 cartImage = PhotoImage(file="./cart.png")
 cartImage = cartImage.subsample(4, 4)
 
+stockImage = PhotoImage(file="./stock.png")
+stockImage = stockImage.subsample(5, 5)
+
+companyImage = PhotoImage(file="./company.png")
+companyImage = companyImage.subsample(5, 5)
+
+corporationImage = PhotoImage(file="./corporation.png")
+corporationImage = corporationImage.subsample(5, 5)
+
 for i in range(len(score.getInvestments())):
     investmentButton = Button(rightFrame, image=cartImage, command=lambda i=i: buyInvestment(i), bd=0, relief="flat", highlightthickness=0, bg=panelColor, activebackground=panelColor, width=cartImage.width(), height=cartImage.height())
     investmentButton.grid(row=4 + i, column=0, padx=6, pady=8)
@@ -384,13 +426,14 @@ settingsButton.grid(row=7, column=0, columnspan=2, pady=(18, 0))
 
 bonusImage = PhotoImage(file="./dollar.png")
 bonusImage = bonusImage.subsample(3, 3)
-bonusButton = Button(root, image=bonusImage, text="+20 $", compound="center", command=bonusClick, font=("Arial", 10, "bold"), fg="white", bd=0, relief="flat", highlightthickness=0, padx=0, pady=0, bg=backgroundColor, activebackground=backgroundColor)
+bonusButton = Button(root, image=bonusImage, text="20 $", compound="center", command=bonusClick, font=("Arial", 10, "bold"), fg="white", bd=0, relief="flat", highlightthickness=0, padx=0, pady=0, bg=backgroundColor, activebackground=backgroundColor)
 
 fontSize = score.getFontSize()
 updateFonts()
 changeTheme(score.getThemeName())
 
 updateLabels()
+loadWorldDecorations()
 autoPoints()
 scheduleNextBonus()
 

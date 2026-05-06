@@ -6,13 +6,142 @@ import Score
 
 backgroundColor = "#3D82ED"
 panelColor = "#19376D"
+textColor = "white"
+fontSize = 14
+themes = {
+    "Blue": ("#3D82ED", "#19376D"),
+    "Gray": ("#808080", "#404040"),
+    "White": ("#EDEDED", "#BDBDBD"),
+    "Green": ("#2E6F40", "#1A2421")
+}
 currentBonusValue = 20
 bonusVisible = False
 bonusShowAfterId = None
 bonusHideAfterId = None
+settingsWindow = None
 
 def money(value):
     return str(int(value)) + " $"
+
+def changeTheme(choice):
+    global backgroundColor
+    global panelColor
+    global textColor
+
+    score.setThemeName(choice)
+    backgroundColor, panelColor = themes[choice]
+
+    if choice == "White":
+        textColor = "black"
+    else:
+        textColor = "white"
+
+    root.configure(bg=backgroundColor)
+    mainFrame.configure(bg=backgroundColor)
+    leftFrame.configure(bg=backgroundColor)
+    rightFrame.configure(bg=panelColor)
+    button.configure(bg=backgroundColor, activebackground=backgroundColor)
+    bonusButton.configure(bg=backgroundColor, activebackground=backgroundColor)
+
+    labels = [moneyTitleLabel, label, pointLabel, autoLabel, levelLabel, nextLevelLabel, shopTitle, investmentTitle]
+    for widget in labels:
+        widget.configure(bg=backgroundColor if widget in [moneyTitleLabel, label, pointLabel, autoLabel, levelLabel, nextLevelLabel] else panelColor)
+
+    moneyTitleLabel.configure(fg=textColor)
+    label.configure(fg=textColor)
+    pointLabel.configure(fg=textColor)
+    autoLabel.configure(fg=textColor)
+    levelLabel.configure(fg=textColor)
+    nextLevelLabel.configure(fg=textColor)
+    shopTitle.configure(fg=textColor)
+    investmentTitle.configure(fg=textColor)
+
+    for investmentLabel in investmentLabels:
+        investmentLabel.configure(bg=panelColor, fg=textColor)
+
+    for investmentButton in investmentButtons:
+        investmentButton.configure(bg=panelColor, activebackground=panelColor)
+
+def openSettingsWindow():
+    global settingsWindow
+    if settingsWindow is not None and settingsWindow.winfo_exists():
+        settingsWindow.focus()
+        settingsWindow.lift()
+        return
+    settingsWindow = Toplevel(root)
+    settingsWindow.title("Ustawienia")
+    settingsWindow.iconbitmap("icon.ico")
+    settingsWindow.geometry("300x300")
+    settingsWindow.resizable(False, False)
+    settingsWindow.configure(bg=panelColor)
+
+    settingsWindow.transient(root)
+    settingsWindow.focus_force()
+
+    title = Label(settingsWindow, text="USTAWIENIA", font=("Arial", 16, "bold"), bg=panelColor, fg=textColor)
+    title.pack(pady=12)
+
+    themeLabel = Label(settingsWindow, text="Motyw kolorystyczny", font=("Arial", 11, "bold"), bg=panelColor, fg=textColor)
+    themeLabel.pack(pady=5)
+
+    Button(settingsWindow, text="Blue", command=lambda: changeTheme("Blue"), width=18).pack(pady=2)
+    Button(settingsWindow, text="Gray", command=lambda: changeTheme("Gray"), width=18).pack(pady=2)
+    Button(settingsWindow, text="White", command=lambda: changeTheme("White"), width=18).pack(pady=2)
+    Button(settingsWindow, text="Green", command=lambda: changeTheme("Green"), width=18).pack(pady=2)
+
+    fontLabel = Label(settingsWindow, text="Rozmiar czcionki", font=("Arial", 11, "bold"), bg=panelColor, fg=textColor)
+    fontLabel.pack(pady=(10, 4))
+
+    fontFrame = Frame(settingsWindow, bg=panelColor)
+    fontFrame.pack()
+
+    Button(fontFrame, text="A+", command=increaseFont, width=8).grid(row=0, column=0, padx=4)
+
+    Button(fontFrame, text="A-", command=decreaseFont, width=8).grid(row=0, column=1, padx=4)
+
+    def onSettingsClose():
+        global settingsWindow
+        settingsWindow.destroy()
+        settingsWindow = None
+
+    settingsWindow.protocol("WM_DELETE_WINDOW", onSettingsClose)
+
+def increaseFont():
+    global fontSize
+    fontSize += 2
+    score.setFontSize(fontSize)
+    updateFonts()
+
+def decreaseFont():
+    global fontSize
+    if fontSize > 8:
+        fontSize -= 2
+    score.setFontSize(fontSize)
+    updateFonts()
+
+def updateFonts():
+    label.config(font=("Arial", fontSize + 14, "bold"))
+
+    pointLabel.config(font=("Arial", fontSize))
+    autoLabel.config(font=("Arial", fontSize))
+    levelLabel.config(font=("Arial", fontSize))
+    nextLevelLabel.config(font=("Arial", fontSize - 2))
+
+    moneyTitleLabel.config(font=("Arial", fontSize, "bold"))
+
+    shopTitle.config(font=("Arial", fontSize + 6, "bold"))
+    investmentTitle.config(font=("Arial", fontSize + 2, "bold"))
+
+    skillButton.config(font=("Arial", fontSize - 1, "bold"))
+    specialUpgradeButton.config(font=("Arial", fontSize - 1, "bold"))
+    settingsButton.config(font=("Arial", fontSize - 1, "bold"))
+
+    specialButton.config(font=("Arial", fontSize - 1, "bold"))
+
+    for investmentLabel in investmentLabels:
+        investmentLabel.config(font=("Arial", fontSize - 2))
+    for investmentButton in investmentButtons:
+        investmentButton.config(width=cartImage.width(), height=cartImage.height())
 
 def updateLabels():
     label.config(text=money(score.getScore()))
@@ -250,9 +379,16 @@ for i in range(len(score.getInvestments())):
     investmentButtons.append(investmentButton)
     investmentLabels.append(investmentLabel)
 
+settingsButton = Button(rightFrame, text="Ustawienia", command=openSettingsWindow, width=28, font=("Arial", 11, "bold"))
+settingsButton.grid(row=7, column=0, columnspan=2, pady=(18, 0))
+
 bonusImage = PhotoImage(file="./dollar.png")
 bonusImage = bonusImage.subsample(3, 3)
 bonusButton = Button(root, image=bonusImage, text="+20 $", compound="center", command=bonusClick, font=("Arial", 10, "bold"), fg="white", bd=0, relief="flat", highlightthickness=0, padx=0, pady=0, bg=backgroundColor, activebackground=backgroundColor)
+
+fontSize = score.getFontSize()
+updateFonts()
+changeTheme(score.getThemeName())
 
 updateLabels()
 autoPoints()

@@ -17,6 +17,8 @@ class Score:
             {"name": "Firma", "baseCost": 6000, "income": 60, "count": 0, "unlockLevel": 4},
             {"name": "Korporacja", "baseCost": 12000, "income": 120, "count": 0, "unlockLevel": 8}
         ]
+        self.themeName = "Niebieski"
+        self.fontSize = 14
 
     def getScore(self):
         return self.score
@@ -63,6 +65,18 @@ class Score:
 
     def getSpecialClickMultiplier(self):
         return 1 + self.specialClickLevel / 100
+
+    def getThemeName(self):
+        return self.themeName
+
+    def setThemeName(self, themeName):
+        self.themeName = themeName
+
+    def getFontSize(self):
+        return self.fontSize
+
+    def setFontSize(self, fontSize):
+        self.fontSize = fontSize
 
     def addClick(self):
         self.score += self.point
@@ -143,7 +157,9 @@ class Score:
             "specialClickBought": self.specialClickBought,
             "specialClickLevel": self.specialClickLevel,
             "specialClickCost": self.specialClickCost,
-            "investments": self.investments
+            "investments": self.investments,
+            "themeName": self.themeName,
+            "fontSize": self.fontSize
         }
         with open("save.json", "w", encoding="utf-8") as file:
             json.dump(data, file, indent=4, ensure_ascii=False)
@@ -161,6 +177,8 @@ class Score:
         self.specialClickLevel = data.get("specialClickLevel", 1)
         self.specialClickCost = data.get("specialClickCost", 20000)
         self.investments = data["investments"]
+        self.themeName = data.get("themeName", "Niebieski")
+        self.fontSize = data.get("fontSize", 14)
 
     def saveExists(self):
         return os.path.exists("save.json")

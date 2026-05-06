@@ -20,6 +20,20 @@ def updateLabels():
     skillButton.config(text="Rozwijaj umiejętności\nKoszt: " + str(score.getUpgradeCost()) + " Pkt")
     progressBar["maximum"] = max(1, score.getProgressMax())
     progressBar["value"] = min(score.getProgress(), score.getProgressMax())
+
+    if score.isSpecialClickBought():
+        specialButton.grid(row=7, column=0, columnspan=2, pady=(0, 10))
+        specialButton.config(text="Innowacyjność\nx" + str(round(score.getSpecialClickMultiplier(), 2)))
+    else:
+        specialButton.grid_forget()
+
+    if not score.isSpecialClickUnlocked():
+        specialUpgradeButton.config(state="disabled", text="Innowacyjność\nOd poziomu 5")
+    elif score.isSpecialClickBought():
+        specialUpgradeButton.config(state="normal", text="Ulepsz Innowacyjność\nKoszt: " + str(score.getSpecialClickCost()) + " pkt")
+    else:
+        specialUpgradeButton.config(state="normal", text="Kup Innowacyjność\nKoszt: " + str(score.getSpecialClickCost()) + " pkt")
+
     updateInvestmentLabels()
 
 def updateInvestmentLabels():
@@ -38,6 +52,11 @@ def click():
     checkLevelUp()
     updateLabels()
 
+def specialClick():
+    score.addSpecialClick()
+    checkLevelUp()
+    updateLabels()
+
 def autoPoints():
     if score.getAutoPoint() > 0:
         score.addAuto()
@@ -51,6 +70,15 @@ def buyUpgrade():
         updateLabels()
     else:
         messagebox.showerror("Błąd", "Nie masz punktów!")
+
+def buySpecialClick():
+    result = score.buySpecialClick()
+    if result == "bought":
+        updateLabels()
+    elif result == "locked":
+        messagebox.showerror("Błąd", "Innowacyjność jest dostępny od poziomu 5!")
+    else:
+        messagebox.showerror("Błąd", "Nie masz wystarczająco punktów!")
 
 def buyInvestment(index):
     result = score.buyInvestment(index)
@@ -187,25 +215,28 @@ mainButtonImage = PhotoImage(file="mainButton.png")
 button = Button(leftFrame, image=mainButtonImage, command=click, borderwidth=0, highlightthickness=0, bg=backgroundColor, activebackground=backgroundColor)
 button.grid(row=6, column=0, columnspan=2, pady=20)
 
+specialButton = Button(leftFrame, text="Innowacyjność", command=specialClick, width=18, height=2, font=("Arial", 11, "bold"))
+
 shopTitle = Label(rightFrame, text="ROZWÓJ", font=("Arial", 20, "bold"), bg=panelColor, fg="white")
 shopTitle.grid(row=0, column=0, columnspan=2, pady=(0, 15))
 
 skillButton = Button(rightFrame, text="Rozwijaj umiejętności\nKoszt: 50 pkt", command=buyUpgrade, width=28, height=2, font=("Arial", 11, "bold"))
 skillButton.grid(row=1, column=0, columnspan=2, padx=6, pady=(0, 18))
 
+specialUpgradeButton = Button(rightFrame, text="Innowacyjność\nOd poziomu 5", command=buySpecialClick, width=28, height=2, font=("Arial", 11, "bold"), state=DISABLED)
+specialUpgradeButton.grid(row=2, column=0, columnspan=2, padx=6, pady=(0, 18))
+
 investmentTitle = Label(rightFrame, text="INWESTYCJE", font=("Arial", 16, "bold"), bg=panelColor, fg="white")
-investmentTitle.grid(row=2, column=0, columnspan=2, pady=(0, 10))
+investmentTitle.grid(row=3, column=0, columnspan=2, pady=(0, 10))
 
 investmentButtons = []
 investmentLabels = []
 
 for i in range(len(score.getInvestments())):
     investmentButton = Button(rightFrame, text="Kup", command=lambda i=i: buyInvestment(i), width=8, font=("Arial", 10))
-    investmentButton.grid(row=3 + i, column=0, padx=6, pady=8)
-
+    investmentButton.grid(row=4 + i, column=0, padx=6, pady=8)
     investmentLabel = Label(rightFrame, text="", bg=panelColor, fg="white", font=("Arial", 10), justify="left", width=42, anchor="w")
-    investmentLabel.grid(row=3 + i, column=1, padx=6, pady=8)
-
+    investmentLabel.grid(row=4 + i, column=1, padx=6, pady=8)
     investmentButtons.append(investmentButton)
     investmentLabels.append(investmentLabel)
 

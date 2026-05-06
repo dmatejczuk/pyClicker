@@ -9,6 +9,9 @@ class Score:
         self.upgradeCost = 50
         self.level = 1
         self.nextLevelScore = 1000
+        self.specialClickBought = False
+        self.specialClickLevel = 1
+        self.specialClickCost = 20000
         self.investments = [
             {"name": "Fundusz inwestycyjny", "baseCost": 600, "income": 6, "count": 0, "unlockLevel": 2},
             {"name": "Firma", "baseCost": 6000, "income": 60, "count": 0, "unlockLevel": 4},
@@ -49,8 +52,23 @@ class Score:
     def isInvestmentUnlocked(self, index):
         return self.level >= self.investments[index]["unlockLevel"]
 
+    def isSpecialClickUnlocked(self):
+        return self.level >= 5
+
+    def isSpecialClickBought(self):
+        return self.specialClickBought
+
+    def getSpecialClickCost(self):
+        return self.specialClickCost
+
+    def getSpecialClickMultiplier(self):
+        return 1 + self.specialClickLevel / 100
+
     def addClick(self):
         self.score += self.point
+
+    def addSpecialClick(self):
+        self.score = int(self.score * self.getSpecialClickMultiplier())
 
     def addAuto(self):
         self.score += self.autoPoint
@@ -65,6 +83,19 @@ class Score:
             self.upgradeCost = int(self.upgradeCost * 1.5)
             return True
         return False
+
+    def buySpecialClick(self):
+        if not self.isSpecialClickUnlocked():
+            return "locked"
+        if self.score >= self.specialClickCost:
+            self.score -= self.specialClickCost
+            if self.specialClickBought:
+                self.specialClickLevel += 1
+            else:
+                self.specialClickBought = True
+            self.specialClickCost = int(self.specialClickCost * 1.6)
+            return "bought"
+        return "no_money"
 
     def buyInvestment(self, index):
         if not self.isInvestmentUnlocked(index):
@@ -109,6 +140,9 @@ class Score:
             "upgradeCost": self.upgradeCost,
             "level": self.level,
             "nextLevelScore": self.nextLevelScore,
+            "specialClickBought": self.specialClickBought,
+            "specialClickLevel": self.specialClickLevel,
+            "specialClickCost": self.specialClickCost,
             "investments": self.investments
         }
         with open("save.json", "w", encoding="utf-8") as file:
@@ -123,6 +157,9 @@ class Score:
         self.upgradeCost = data["upgradeCost"]
         self.level = data["level"]
         self.nextLevelScore = data["nextLevelScore"]
+        self.specialClickBought = data.get("specialClickBought", False)
+        self.specialClickLevel = data.get("specialClickLevel", 1)
+        self.specialClickCost = data.get("specialClickCost", 20000)
         self.investments = data["investments"]
 
     def saveExists(self):

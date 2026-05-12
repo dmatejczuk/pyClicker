@@ -210,7 +210,7 @@ def buyUpgrade():
     if score.buyUpgrade():
         updateLabels()
     else:
-        messagebox.showerror("Błąd", "Nie masz pieniędzy!")
+        messagebox.showerror("Błąd", "Nie masz wystarczająco pieniędzy!")
 
 def buySpecialClick():
     result = score.buySpecialClick()
